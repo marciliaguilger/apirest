@@ -4,7 +4,13 @@ using System.Text;
 
 namespace Dev.IO.Business.Models
 {
-    public class Entity
+    public abstract class Entity
     {
+        protected Entity()
+        {
+            Id = Guid.NewGuid();
+        }
+
+        public Guid Id { get; set; }
     }
 }

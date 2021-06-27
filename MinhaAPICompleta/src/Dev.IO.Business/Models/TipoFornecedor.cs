@@ -4,7 +4,9 @@ using System.Text;
 
 namespace Dev.IO.Business.Models
 {
-    public class TipoFornecedor
+    public enum TipoFornecedor
     {
+        PessoaFisica = 1,
+        PessoaJuridica
     }
 }

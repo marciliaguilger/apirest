@@ -15,4 +15,8 @@
     <ProjectReference Include="..\Dev.IO.Data\Dev.IO.Data.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Controllers\" />
+  </ItemGroup>
+
 </Project>
