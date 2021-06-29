@@ -1,10 +1,31 @@
-﻿using System;
+﻿using Dev.IO.Business.Interfaces;
 using System.Collections.Generic;
-using System.Text;
+using System.Linq;
 
 namespace Dev.IO.Business.Notifications
 {
-    public class Notificator
+    public class Notificator : INotificator
     {
+        private List<Notification> _notifications;
+
+        public Notificator()
+        {
+            _notifications = new List<Notification>();
+        }
+        public void Handle(Notification notification)
+        {
+            _notifications.Add(notification);
+        }
+
+        public List<Notification> GetNotifications()
+        {
+            return _notifications;
+        }
+
+        public bool HasNotification()
+        {
+            return _notifications.Any();
+        }
+
     }
 }
