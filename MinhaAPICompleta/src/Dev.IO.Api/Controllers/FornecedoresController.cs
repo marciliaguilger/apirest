@@ -13,13 +13,17 @@ namespace Dev.IO.Api.Controllers
     public  class FornecedoresController : MainController
     {
         private readonly IFornecedorRepository _fornecedorRepository;
+        private readonly IEnderecoRepository _enderecoRepository;
         private readonly IMapper _mapper;
         private readonly IFornecedorService _fornecedorService;
         public FornecedoresController(IFornecedorRepository fornecedorRepository,
+                                        IEnderecoRepository enderecoRepository,
                                         IMapper mapper,
-                                        IFornecedorService fornecedorService)
+                                        IFornecedorService fornecedorService,
+                                        INotificator notificator) : base (notificator)
         {
             _fornecedorRepository = fornecedorRepository;
+            _enderecoRepository = enderecoRepository;
             _mapper = mapper;
             _fornecedorService = fornecedorService;
         }
@@ -38,18 +42,21 @@ namespace Dev.IO.Api.Controllers
             return fornecedor;
         }
         
+        [HttpGet("obter-endereco/{id:guid}")]
+        public async Task<ActionResult<EnderecoViewModel>> ObterEnderecoPorId(Guid id)
+        {
+            return _mapper.Map<EnderecoViewModel>(await _enderecoRepository.ObterPorId(id));
+        }
+        
         [HttpPost]
         public async Task<ActionResult<FornecedorViewModel>> Adicionar(FornecedorViewModel fornecedorViewModel)
         {
             //validar os parametros dos data annotations
-            if (!ModelState.IsValid) return BadRequest();
+            if (!ModelState.IsValid) return CustomResponse(ModelState);
 
-            var fornecedor = _mapper.Map<Fornecedor>(fornecedorViewModel);
-            var result = await _fornecedorService.Adicionar(fornecedor);
+            await _fornecedorService.Adicionar(_mapper.Map<Fornecedor>(fornecedorViewModel));
 
-            if (!result) return BadRequest();
-
-            return Ok(fornecedor);
+            return CustomResponse(fornecedorViewModel);
         }
         
         [HttpPut("{id:guid}")]
@@ -57,38 +64,45 @@ namespace Dev.IO.Api.Controllers
         //não precisa especificar sem vem from route ou query, o asp net 2.2 entende que vem da rota quando especificado no verbo.
         public async Task<ActionResult<FornecedorViewModel>> Atualizar(Guid id, FornecedorViewModel fornecedorViewModel)
         {
-            if (id != fornecedorViewModel.Id) return BadRequest();
+            if (id != fornecedorViewModel.Id)
+            {
+                NotifyError("Current id is different from original id");
+                return CustomResponse(fornecedorViewModel);
+            }
             
             //validar os parametros dos data annotations
-            if (!ModelState.IsValid) return BadRequest();
-
-            var fornecedor = _mapper.Map<Fornecedor>(fornecedorViewModel);
-            var result = await _fornecedorService.Atualizar(fornecedor);
-
-            if (!result) return BadRequest();
-
-            return Ok(fornecedor);
+            if (!ModelState.IsValid) return CustomResponse(ModelState);
+            await _fornecedorService.Atualizar( _mapper.Map<Fornecedor>(fornecedorViewModel));
+            return CustomResponse(fornecedorViewModel);
         }
-        
+        [HttpPut("atualizar-endereco/{id:guid}")]
+        public async Task<ActionResult<EnderecoViewModel>> AtualizarEndereco(Guid id, EnderecoViewModel enderecoViewModel)
+        {
+            if (id != enderecoViewModel.Id)
+            {
+                NotifyError("Current id is different from original id");
+                return CustomResponse(enderecoViewModel);
+            }
+            //validar os parametros dos data annotations
+            if (!ModelState.IsValid) return CustomResponse(ModelState);
+            await _fornecedorService.Atualizar( _mapper.Map<Fornecedor>(enderecoViewModel));
+            return CustomResponse(enderecoViewModel);
+        }
         [HttpDelete("{id:guid}")]
 
         //não precisa especificar sem vem from route ou query, o asp net 2.2 entende que vem da rota quando especificado no verbo.
         public async Task<ActionResult<FornecedorViewModel>> Excluir(Guid id)
         {
-            var fornecedor = await ObterFornecedorEndereco(id);
-            if (fornecedor == null) return NotFound();
-            var result = await _fornecedorService.Remover(id);
-            if (!result) return BadRequest();
-            return Ok(fornecedor);
+            var fornecedorViewModel = await ObterFornecedorEndereco(id);
+            if (fornecedorViewModel == null) return NotFound();
+            await _fornecedorService.Remover(id);
+
+            return CustomResponse();
         }
-
-
-
         public async Task<FornecedorViewModel> ObterFornecedorProdutosEndereco(Guid id)
         {
             return _mapper.Map<FornecedorViewModel>(await _fornecedorRepository.ObterFornecedorProdutosEndereco(id));
         }
-        
         public async Task<FornecedorViewModel> ObterFornecedorEndereco(Guid id)
         {
             return _mapper.Map<FornecedorViewModel>(await _fornecedorRepository.ObterFornecedorEndereco(id));
